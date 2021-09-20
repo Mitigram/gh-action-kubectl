@@ -107,7 +107,7 @@ runs:
       shell: bash
       run: |
         printf '::set-output name=version::%s\n' \
-            "$( "${{ steps.install.outputs.path }}" version --client --short |
+            "$( kubectl version --client --short |
                 grep -oE '[0-9]+(\.[0-9]+(\.[0-9]+)?)?' )"
 
     -
@@ -119,7 +119,7 @@ runs:
       env:
         TMPDIR: ${{ runner.temp }}
       run: |
-        ${{ github.action_path }}/kubect.sh \
+        ${{ github.action_path }}/kubectl.sh \
           -k '${{ inputs.config }}' \
           -s '${{ inputs.host }}' \
           -u '${{ inputs.username }}' \
