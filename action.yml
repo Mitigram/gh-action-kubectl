@@ -1,0 +1,130 @@
+name: kubectl
+description: Will download (if necessary) and run kubectl
+author: Emmanuel Frecon <emmanuel.frecon@mitigram.com>
+branding:
+  icon: cloud-lightning
+  color: purple
+
+inputs:
+  config:
+    description: base64-encoded Kubernetes configuration YAML file
+    required: false
+    default: ""
+  host:
+    description: Kubernetes cluster host
+    required: false
+    default: ""
+  certificate:
+    description: Kubernetes cluster CA certificate
+    required: false
+    default: ""
+  username:
+    description: Username for access to Kubernetes cluster
+    required: false
+    default: ""
+  password:
+    description: Password for access to Kubernetes cluster
+    required: false
+    default: ""
+  token:
+    description: |
+      Token for access to Kubernetes cluster, instead of username/password pair
+    required: false
+    default: ""
+  root:
+    description: Root for kubectl download location
+    required: false
+    default: https://storage.googleapis.com/kubernetes-release/release
+  version:
+    description: |
+      kubectl version to use, latest stable will be used when empty, the
+      default.
+    required: false
+    default: ""
+  options:
+    description: |
+      Additional options to kubectl wrapper, e.g. -v to print out additional
+      verbose information.
+    required: false
+    default: ""
+  args:
+    description: command-line options for kubectl call
+    required: true
+    default: cluster-info
+
+
+outputs:
+  version:
+    description: |
+      kubectl version that was used and/or installed. This will be a semantic
+      version, i.e. <major>.<minor>.<patch>.
+    value: ${{ steps.kver.outputs.version }}
+
+
+runs:
+  using: composite
+  steps:
+    -
+      name: kubectl version to use
+      id: version
+      shell: bash
+      # Whenever the input version is empty (the default, and probably best
+      # solution in most cases), download the official stable version from the
+      # root URL. In whichever cases, set the output of this step to be the
+      # version to use when installing kubectl.
+      run: |
+        download() {
+          if command -v curl >&2 >/dev/null; then
+            curl -sSL "$1"
+          elif command -v wget >&2 >/dev/null; then
+            wget -q -O - "$1"
+          else
+            echo "Can neither find curl, nor wget for downloading" >&2
+            return 1
+          fi
+        }
+
+        if [ -z "${{ inputs.version }}" ]; then
+          printf '::set-output name=version::%s\n' \
+            "$( download "${{ inputs.root }}/stable.txt" |
+                grep -oE '[0-9]+(\.[0-9]+(\.[0-9]+)?)?' )"
+        else
+          printf '::set-output name=version::%s\n' "${{ inputs.version }}"
+        fi
+    -
+      name: Install kubectl
+      uses: efrecon/bininstall@main
+      with:
+        installer: bin
+        url: ${{ inputs.root }}/v${{ steps.version.outputs.version }}/bin/linux/amd
+
+    -
+      # Ask the installed kubectl which version it actually runs and report this
+      # as a semver.
+      name: kubectl version discovery
+      id: kver
+      shell: bash
+      run: |
+        printf '::set-output name=version::%s\n' \
+            "$( kubectl version --client --short |
+                grep -oE '[0-9]+(\.[0-9]+(\.[0-9]+)?)?' )"
+
+    -
+      name: run kubectl
+      id: kubectl
+      shell: bash
+      # Arrange for temporary directory to be runner's temporary directory. This
+      # ensures that transient data will be removed once workflow has ended.
+      env:
+        TMPDIR: ${{ runner.temp }}
+      run: |
+        ${{ github.action_path }}/kubect.sh \
+          -k '${{ inputs.config }}' \
+          -s '${{ inputs.host }}' \
+          -u '${{ inputs.username }}' \
+          -p '${{ inputs.password }}' \
+          -c '${{ inputs.certificate }}' \
+          -t '${{ inputs.token }}' \
+          ${{ inputs.options }} \
+          -- \
+            ${{ inputs.args }}
