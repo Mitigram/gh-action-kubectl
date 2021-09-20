@@ -97,7 +97,7 @@ runs:
       id: install
       with:
         installer: bin
-        url: ${{ inputs.root }}/v${{ steps.version.outputs.version }}/bin/linux/amd
+        url: ${{ inputs.root }}/v${{ steps.version.outputs.version }}/bin/linux/amd64/kubectl
 
     -
       # Ask the installed kubectl which version it actually runs and report this
@@ -107,7 +107,7 @@ runs:
       shell: bash
       run: |
         printf '::set-output name=version::%s\n' \
-            "$( "${{ steps.install.outputs.path }}" version --client --short |
+            "$( kubectl version --client --short |
                 grep -oE '[0-9]+(\.[0-9]+(\.[0-9]+)?)?' )"
 
     -
