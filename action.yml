@@ -94,6 +94,7 @@ runs:
     -
       name: Install kubectl
       uses: efrecon/bininstall@main
+      id: install
       with:
         installer: bin
         url: ${{ inputs.root }}/v${{ steps.version.outputs.version }}/bin/linux/amd
@@ -106,7 +107,7 @@ runs:
       shell: bash
       run: |
         printf '::set-output name=version::%s\n' \
-            "$( kubectl version --client --short |
+            "$( "${{ steps.install.outputs.path }}" version --client --short |
                 grep -oE '[0-9]+(\.[0-9]+(\.[0-9]+)?)?' )"
 
     -
