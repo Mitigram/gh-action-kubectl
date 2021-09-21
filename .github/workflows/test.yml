@@ -25,3 +25,4 @@ jobs:
         with:
           config: ${{ secrets.KUBECTL_KUBECONFIG }}
           options: -v
+          args: get pods --all-namespaces
