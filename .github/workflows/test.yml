@@ -14,7 +14,7 @@ jobs:
       - self-hosted
       - linux
       - x64
-      - docker
+      - host
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -45,10 +45,6 @@ jobs:
         env:
           MATRIX_CONTEXT: ${{ toJSON(matrix) }}
         run: echo "$MATRIX_CONTEXT"
-
-      - name: content check
-        run: |
-          ls -lRa "${{ github.workspace }}"
 
       - name: kubectl
         uses: ./
