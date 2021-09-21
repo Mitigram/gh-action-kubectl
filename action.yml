@@ -87,7 +87,7 @@ runs:
         if [ -z "${{ inputs.version }}" ]; then
           printf '::set-output name=version::%s\n' \
             "$( ${{ github.action_path }}/version.sh \
-                  -c "${{ github.workspace }}/.local/share/kubectl" \
+                  -c "${{ runner.tool_cache }}/${{ github.repository }}/share/kubectl" \
                   -k "${{ inputs.cache }} " \
                   -r "${{ inputs.root }}" |
                 grep -oE '[0-9]+(\.[0-9]+(\.[0-9]+)?)?' )"
