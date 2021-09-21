@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# This script is a wrapper for kubectl. It will authenticate at a cluster, and
+# pass all further arguments to the kubectl binary. For some of the options, the
+# script will attempt to guess the type of their value and convert to options
+# that kubectl understands directly. When such conversions are performed, they
+# happen in a temporary directory that is cleaned up after the kubeectl call.
+
 set -eu
 
 # Set this to 1 for more verbosity (on stderr)
@@ -154,5 +160,6 @@ fi
 # let's call kubectl with all of them
 "$KUBECTL_BINARY" "$@"
 
-# Cleanup
+# Cleanup. We should really trap. But the action guarantees that the directory
+# content will be removed, by construction.
 rm -rf "$TMPD"
