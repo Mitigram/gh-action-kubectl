@@ -21,6 +21,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Context Dump
+        run: echo "$GITHUB_CONTEXT"
+
       - name: content check
         run: |
           ls -lRa "${{ github.workspace }}"
