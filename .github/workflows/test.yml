@@ -20,6 +20,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+
+      - name: content check
+        run: |
+          ls -lRa "${{ github.workspace }}"
+
       - name: kubectl
         uses: ./
         with:
