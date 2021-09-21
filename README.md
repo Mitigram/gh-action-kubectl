@@ -81,10 +81,9 @@ base64 encoded kubeconfig or the YAML with the content of the kubeconfig file
 
 ## Output
 
-This action provides a two outputs:
+This action provides two outputs:
 
 + `version` is the version of the `kubectl` that was used by the action. This
   will be a semantic version, i.e. `<major>.<minor>.<patch>`, `1.22.2`.
 + `output` is the result of the `kubectl`, so that your workflow can make use of
   this output further below.
-
