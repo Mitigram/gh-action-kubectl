@@ -16,7 +16,7 @@ VERSION_VERBOSE=${VERSION_VERBOSE:-0}
 # created if necessary)
 VERSION_CACHE=${VERSION_CACHE:-"${XDG_STATE_HOME%%*/}/kubectl"}
 
-# Version channel to follow
+# Default version channel to follow
 VERSION_CHANNEL=${VERSION_CHANNEL:-"stable"}
 
 # Root URL for kubectl binary download.
@@ -30,7 +30,7 @@ VERSION_KEEP=${VERSION_KEEP:-0}
 # This uses the comments behind the options to show the help. Not extremly
 # correct, but effective and simple.
 usage() {
-  echo "$0 discovers (and cache) the kubectl version for a given release channel:" && \
+  echo "$0 discovers (and caches) the kubectl versions for release channels passed as arguments" && \
     grep "[[:space:]].)\ #" "$0" |
     sed 's/#//' |
     sed -r 's/([a-z])\)/-\1/'
@@ -41,7 +41,7 @@ while getopts "c:l:r:k:vh-" opt; do
   case "$opt" in
     c) # Location of cache file for version storage.
       VERSION_CACHE=$OPTARG;;
-    l) # Channel to use for kubectl
+    l) # Default channel to use for kubectl when none provided as an argument
       VERSION_CHANNEL=$OPTARG;;
     r) # Root URL to use for all kubectl binaries (and channel information!)
       VERSION_ROOTURL=$OPTARG;;
@@ -128,8 +128,8 @@ howlong() {
 }
 
 cache() {
-  verbose "Caching version from ${VERSION_ROOTURL%%*/}/${VERSION_CHANNEL}.txt"
-  download "${VERSION_ROOTURL%%*/}/${VERSION_CHANNEL}.txt" "${VERSION_CACHE%%*/}/${VERSION_CHANNEL}.txt"
+  verbose "Caching version from ${VERSION_ROOTURL%%*/}/${1}.txt"
+  download "${VERSION_ROOTURL%%*/}/${1}.txt" "${VERSION_CACHE%%*/}/${1}.txt"
 }
 
 if ! [ -d "$VERSION_CACHE" ]; then
@@ -137,28 +137,40 @@ if ! [ -d "$VERSION_CACHE" ]; then
   mkdir -p "$VERSION_CACHE"
 fi
 
-VERSION_KEEP=$(howlong "$VERSION_KEEP")
-if [ -f "${VERSION_CACHE%%*/}/${VERSION_CHANNEL}.txt" ]; then
-  if [ -n "$VERSION_KEEP" ] && [ "$VERSION_KEEP" -gt "0" ]; then
-    last=$(stat -c "%Z" "${VERSION_CACHE%%*/}/${VERSION_CHANNEL}.txt")
-    # Get the current number of seconds since the epoch, POSIX compliant:
-    # https://stackoverflow.com/a/12746260
-    now=$(PATH=$(getconf PATH) awk 'BEGIN{srand();print srand()}')
-    elapsed=$(( now - last ))
-    if [ "$elapsed" -gt "$VERSION_KEEP" ]; then
-      verbose "File at ${VERSION_CACHE%%*/}/${VERSION_CHANNEL}.txt $elapsed secs. (too) old, downloading again."
-      cache
+version() {
+  VERSION_KEEP=$(howlong "$VERSION_KEEP")
+  if [ -f "${VERSION_CACHE%%*/}/${1}.txt" ]; then
+    if [ -n "$VERSION_KEEP" ] && [ "$VERSION_KEEP" -gt "0" ]; then
+      last=$(stat -c "%Z" "${VERSION_CACHE%%*/}/${1}.txt")
+      # Get the current number of seconds since the epoch, POSIX compliant:
+      # https://stackoverflow.com/a/12746260
+      now=$(PATH=$(getconf PATH) awk 'BEGIN{srand();print srand()}')
+      elapsed=$(( now - last ))
+      if [ "$elapsed" -gt "$VERSION_KEEP" ]; then
+        verbose "File at ${VERSION_CACHE%%*/}/${1}.txt $elapsed secs. (too) old, downloading again."
+        cache "$1"
+      else
+        verbose "File at ${VERSION_CACHE%%*/}/${1}.txt $elapsed secs. old, keeping."
+      fi
     else
-      verbose "File at ${VERSION_CACHE%%*/}/${VERSION_CHANNEL}.txt $elapsed secs. old, keeping."
+      verbose "Cache time $VERSION_KEEP negative (or invalid), installing"
+      cache "$1"
     fi
   else
-    verbose "Cache time $VERSION_KEEP negative (or invalid), installing"
-    cache
+    verbose "No file at ${VERSION_CACHE%%*/}/${1}.txt, installing"
+    cache "$1"
   fi
-else
-  verbose "No file at ${VERSION_CACHE%%*/}/${VERSION_CHANNEL}.txt, installing"
-  cache
-fi
 
-# Print out version (from cache)
-[ -f "${VERSION_CACHE%%*/}/${VERSION_CHANNEL}.txt" ] && cat "${VERSION_CACHE%%*/}/${VERSION_CHANNEL}.txt"
+  # Print out version (from cache)
+  if [ -f "${VERSION_CACHE%%*/}/${1}.txt" ]; then
+    printf %s\\n "$(tr -d '\n' < "${VERSION_CACHE%%*/}/${1}.txt")"
+  fi
+}
+
+if [ "$#" = "0" ]; then
+  version "$VERSION_CHANNEL"
+else
+  for ver in "$@"; do
+    version "$ver"
+  done
+fi
