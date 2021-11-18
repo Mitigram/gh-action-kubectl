@@ -50,7 +50,7 @@ usage() {
 while getopts "k:s:c:t:u:p:6b:vh-" opt; do
   case "$opt" in
     6) # Values of -k, -c options will all be decoded from base64, default is to guess.
-      KUBECTL_VERBOSE=1;;
+      KUBECTL_BASE64=1;;
     k) # kubeconfig to use, base64 encoding preferred.
       KUBECTL_KUBECONFIG=$OPTARG;;
     s) # Server hostname.
