@@ -162,5 +162,8 @@ runs:
                     ${{ inputs.options }} \
                     -- \
                       ${{ inputs.args }} )
-        printf '::set-output name=value::%s\n' "${value}"
-        printf '%s\n' "${value}"
+        printf '%s\n' "$value"
+        # Perform following replacements: %->%25 \n->%0A \r->%0D, keeping the
+        # line ending marker out. The complex sed newline replacement is
+        # because sed works line-by-line.
+        printf '::set-output name=value::%s\n' "$(printf %s "$value" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | sed -e ':a;N;$!ba;s/\n/%0A/g' | sed -e 's/%0D$//')"
