@@ -102,14 +102,13 @@ runs:
       # version is kept in cache.
       run: |
         if [ -z "${{ inputs.version }}" ]; then
-          printf '::set-output name=version::%s\n' \
-            "$( ${{ github.action_path }}/version.sh \
+          echo "version=$( ${{ github.action_path }}/version.sh \
                   -c "${{ runner.tool_cache }}/${{ github.repository }}/share/kubectl" \
                   -k "${{ inputs.cache }} " \
                   -r "${{ inputs.root }}" |
-                grep -oE '[0-9]+(\.[0-9]+(\.[0-9]+)?)?' )"
+                grep -oE '[0-9]+(\.[0-9]+(\.[0-9]+)?)?' )" >> $GITHUB_OUTPUT
         else
-          printf '::set-output name=version::%s\n' "${{ inputs.version }}"
+          echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
         fi
 
     # Download the kubectl at the version detected above and install it for
@@ -131,9 +130,7 @@ runs:
       id: kver
       shell: bash
       run: |
-        printf '::set-output name=version::%s\n' \
-            "$( kubectl version --client --short |
-                grep -oE '[0-9]+(\.[0-9]+(\.[0-9]+)?)?' )"
+        echo 'version="$( kubectl version --client --short | grep -oE '[0-9]+(\.[0-9]+(\.[0-9]+)?)?' )" >> $GITHUB_OUTPUT
 
     # We now have a kubectl binary to rely on. Convert authentication
     # information, depending on the various inputs that might have been provided
@@ -166,4 +163,4 @@ runs:
         # Perform following replacements: %->%25 \n->%0A \r->%0D, keeping the
         # line ending marker out. The complex sed newline replacement is
         # because sed works line-by-line.
-        printf '::set-output name=value::%s\n' "$(printf %s "$value" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | sed -e ':a;N;$!ba;s/\n/%0A/g' | sed -e 's/%0D$//')"
+        echo "value=$(printf %s "$value" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | sed -e ':a;N;$!ba;s/\n/%0A/g' | sed -e 's/%0D$//')" >> $GITHUB_OUTPUT
