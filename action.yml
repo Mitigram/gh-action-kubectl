@@ -116,7 +116,7 @@ runs:
     # repository.
     -
       name: Install kubectl
-      uses: efrecon/bininstall@main
+      uses: Mitigram/bininstall@feature/fix-set-output
       id: install
       with:
         installer: bin
