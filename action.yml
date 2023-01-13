@@ -116,7 +116,7 @@ runs:
     # repository.
     -
       name: Install kubectl
-      uses: Mitigram/bininstall@feature/fix-set-output
+      uses: Mitigram/bininstall@main
       id: install
       with:
         installer: bin
